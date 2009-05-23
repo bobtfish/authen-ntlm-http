@@ -47,7 +47,7 @@ require DynaLoader;
 @ISA = qw (Exporter DynaLoader);
 @EXPORT = qw ();
 @EXPORT_OK = qw (nt_hash lm_hash calc_resp);
-$VERSION = '0.20';
+$VERSION = '0.21';
 
 # Stolen from Crypt::DES.
 sub usage {
@@ -252,21 +252,31 @@ sub parse_negotiate($$)
 # challenge_msg composes the NTLM challenge message. It takes NTLM #
 # Negotiation Flags as an argument.                                # 
 ####################################################################
-sub challenge_msg($)
+sub challenge_msg($$)
 {
-    my ($self) = @_;
+    my $self = $_[0];
     my $flags = pack("V", $_[1]);
+    my $nonce = undef;
+    $nonce = $_[2] if @_ == 3;
     my $domain = $self->{'domain'};
     my $msg = NTLMSSP_SIGNATURE . chr(0);
     $self->{'cChallenge'} += 0x100;
     $msg .= pack("V", NTLMSSP_CHALLENGE);
-    $msg .= pack("v", 2*length($domain)) . pack("v", 2*length($domain)) . pack("V", 48);
+    if ($_[1] & NTLMSSP_TARGET_TYPE_DOMAIN) {
+	$msg .= pack("v", 2*length($domain)) . pack("v", 2*length($domain)) . pack("V", 48);
+    }
+    else {
+	$msg .= pack("v", 0) . pack("v", 0) . pack("V", 40);
+    }
     $msg .= $flags;
-    $msg .= compute_nonce($self->{'cChallenge'});
+    if (defined $nonce) {$msg .= $nonce;}
+    else {$msg .= compute_nonce($self->{'cChallenge'});}
     $msg .= pack("VV", 0, 0); # 8 bytes of reserved 0s
-    $msg .= pack("V", 0); # ServerContextHandleLower
-    $msg .= pack("V", 0x3c); # ServerContextHandleUpper
-    $msg .= unicodify($domain);
+    if ($_[1] & NTLMSSP_TARGET_TYPE_DOMAIN) {
+	$msg .= pack("V", 0); # ServerContextHandleLower
+	$msg .= pack("V", 0x3c); # ServerContextHandleUpper
+	$msg .= unicodify($domain);
+    }
     return $msg;
 }
 
@@ -281,12 +291,17 @@ sub parse_challenge
     substr($pkt, 0, 8) eq (NTLMSSP_SIGNATURE . chr(0)) or usage "NTLM Challenge doesn't contain NTLMSSP_SIGNATURE!\n";
     my $type = GetInt32(substr($pkt, 8));
     $type == NTLMSSP_CHALLENGE or usage "Not an NTLM Challenge Message!\n";
-    my $target = GetString($pkt, 12);
-    $target = un_unicodify($target);
     my $flags = GetInt32(substr($pkt, 20));
+    my $target = undef;
+    my $ctx_lower = undef; 
+    my $ctx_upper = undef;
+    if ($flags & NTLMSSP_TARGET_TYPE_DOMAIN) {
+	$target = GetString($pkt, 12);
+	$target = un_unicodify($target);
+	$ctx_lower = GetInt32(substr($pkt, 40));
+	$ctx_upper = GetInt32(substr($pkt, 44));
+    }
     my $nonce = substr($pkt, 24, 8);
-    my $ctx_lower = GetInt32(substr($pkt, 40));
-    my $ctx_upper = GetInt32(substr($pkt, 44));
     return ($target, $flags, $nonce, $ctx_lower, $ctx_upper);
 }
 
@@ -587,7 +602,7 @@ use Authen::NTLM qw(nt_hash lm_hash);
 	   | Authen::NTLM::NTLMSSP_NEGOTIATE_NTLM
 	   | Authen::NTLM::NTLMSSP_NEGOTIATE_UNICODE
 	   | Authen::NTLM::NTLMSSP_REQUEST_TARGET;
-    $auth_msg = $client->auth_msg($nonec, $flags);
+    $auth_msg = $client->auth_msg($nonce, $flags);
 
 # To parse a NTLM Response Packet
     ($flags, $lm_resp, $nt_resp, $user_domain, $username, $machine) =

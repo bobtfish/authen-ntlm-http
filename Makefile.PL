@@ -1,11 +1,24 @@
 #!/usr/bin/perl
 
 use ExtUtils::MakeMaker;
-WriteMakefile(
-    'NAME'	    => 'Authen::NTLM::HTTP',
-    'VERSION_FROM'  => 'lib/Authen/NTLM/HTTP.pm',
-    'PREREQ_PM'     => {
-			Authen::NTLM => 0.21,
-			MIME::Base64 => 2.12,
-			}
+eval "require Crypt::DES && require Digest::MD4";
+if ($@) {
+	WriteMakefile(
+	    'NAME'	    => 'Authen::NTLM',
+	    'VERSION_FROM'  => 'lib/Authen/NTLM.pm',
+	    'PREREQ_PM'     => {
+			       Crypt::DES_PP => 1.00,
+			       Digest::Perl::MD4 => 1.0, 
+			       }
+	);
+}
+else {
+    WriteMakefile(
+	'NAME'		=> 'Authen::NTLM',
+	'VERSION_FROM'	=> 'lib/Authen/NTLM.pm',
+	'PREREQ_PM'     => {
+			   Crypt::DES => 2.03,
+			   Digest::MD4 => 1.1, 
+			   }
     );
+}

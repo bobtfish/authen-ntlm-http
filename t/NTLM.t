@@ -3,7 +3,7 @@
 use Authen::NTLM qw(nt_hash lm_hash);
 use Test;
 
-plan tests => 13;
+plan tests => 17;
 $my_pass = "Beeblebrox";
 $nonce = "SrvNonce";
 $client = new_client Authen::NTLM(lm_hash($my_pass), nt_hash($my_pass), "USER", "USERDOM", "DOM", "WS");
@@ -65,4 +65,8 @@ $correct_challenge_msg2 = pack("H44",
 $challenge_msg = $server->challenge_msg($flags);
 ok(substr($challenge_msg, 0, 24) eq $correct_challenge_msg1 and substr($challenge_msg, 32, 22) eq $correct_challenge_msg2);
 @result = $client->parse_challenge($challenge_msg);
-ok($result[0] eq "DOM" and $result[1] == unpack("V", pack("H8", "05820100")) and length($result[2]) == 8 and $result[3] == 0 and $result[4] == 0x3c);
+ok($result[0] eq "DOM");
+ok($result[1] == unpack("V", pack("H8", "05820100")));
+ok(length($result[2]) == 8);
+ok($result[3] == 0);
+ok($result[4] == 0x3c);
