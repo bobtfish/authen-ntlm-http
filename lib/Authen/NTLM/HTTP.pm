@@ -20,7 +20,7 @@ require DynaLoader;
 @ISA = qw (Exporter DynaLoader Authen::NTLM);
 @EXPORT = qw ();
 @EXPORT_OK = qw ();
-$VERSION = '0.01';
+$VERSION = '0.02';
 
 # Stolen from Crypt::DES.
 sub usage {
@@ -84,10 +84,6 @@ use constant NTLMSSP_NEGOTIATE_TARGET_INFO              => 0x00800000;
 use constant NTLMSSP_NEGOTIATE_128                      => 0x20000000;
 use constant NTLMSSP_NEGOTIATE_KEY_EXCH                 => 0x40000000;
 use constant NTLMSSP_NEGOTIATE_80000000                 => 0x80000000;
-
-sub lm_hash($);
-sub nt_hash($);
-sub calc_resp($$);
 
 #########################################################################
 # Constructor to initialize authentication related information. In this #
