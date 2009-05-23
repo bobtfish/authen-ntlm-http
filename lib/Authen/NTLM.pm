@@ -47,7 +47,7 @@ require DynaLoader;
 @ISA = qw (Exporter DynaLoader);
 @EXPORT = qw ();
 @EXPORT_OK = qw (nt_hash lm_hash calc_resp);
-$VERSION = '0.30';
+$VERSION = '0.31';
 
 # Stolen from Crypt::DES.
 sub usage {
@@ -263,7 +263,12 @@ sub challenge_msg($$)
     $self->{'cChallenge'} += 0x100;
     $msg .= pack("V", NTLMSSP_CHALLENGE);
     if ($_[1] & NTLMSSP_TARGET_TYPE_DOMAIN) {
-	$msg .= pack("v", 2*length($domain)) . pack("v", 2*length($domain)) . pack("V", 48);
+	if ($_[1] & NTLMSSP_NEGOTIATE_UNICODE) {
+	    $msg .= pack("v", 2*length($domain)) . pack("v", 2*length($domain)) . pack("V", 48);
+	}
+	else {
+	    $msg .= pack("v", length($domain)) . pack("v", length($domain)) . pack("V", 48);
+	}
     }
     else {
 	$msg .= pack("v", 0) . pack("v", 0) . pack("V", 40);
@@ -275,7 +280,12 @@ sub challenge_msg($$)
     if ($_[1] & NTLMSSP_TARGET_TYPE_DOMAIN) {
 	$msg .= pack("V", 0); # ServerContextHandleLower
 	$msg .= pack("V", 0x3c); # ServerContextHandleUpper
-	$msg .= unicodify($domain);
+	if ($_[1] & NTLMSSP_NEGOTIATE_UNICODE) {
+	    $msg .= unicodify($domain);
+	}
+	else {
+	    $msg .= $domain;
+	}
     }
     return $msg;
 }
@@ -297,7 +307,7 @@ sub parse_challenge
     my $ctx_upper = undef;
     if ($flags & NTLMSSP_TARGET_TYPE_DOMAIN) {
 	$target = GetString($pkt, 12);
-	$target = un_unicodify($target);
+	$target = un_unicodify($target) if $flags & NTLMSSP_NEGOTIATE_UNICODE;
 	$ctx_lower = GetInt32(substr($pkt, 40));
 	$ctx_upper = GetInt32(substr($pkt, 44));
     }
@@ -355,13 +365,24 @@ sub auth_msg($$$)
     my $msg = NTLMSSP_SIGNATURE . chr(0);
     $msg .= pack("V", NTLMSSP_AUTH);
     my $offset = length($msg) + 8*6 + 4;
-    $msg .= pack("v", length($lm_resp)) . pack("v", length($lm_resp)) . pack("V", $offset + 2*length($user_domain) + 2*length($username) + 2*length($machine) + length($session_key)); 
-    $msg .= pack("v", length($nt_resp)) . pack("v", length($nt_resp)) . pack("V", $offset + 2*length($user_domain) + 2*length($username) + 2*length($machine) + length($session_key) + length($lm_resp)); 
-    $msg .= pack("v", 2*length($user_domain)) . pack("v", 2*length($user_domain)) . pack("V", $offset); 
-    $msg .= pack("v", 2*length($username)) . pack("v", 2*length($username)) . pack("V", $offset + 2*length($user_domain)); 
-    $msg .= pack("v", 2*length($machine)) . pack("v", 2*length($machine)) . pack("V", $offset + 2*length($user_domain) + 2*length($username)); 
-    $msg .= pack("v", length($session_key)) . pack("v", length($session_key)) . pack("V", $offset + 2*length($user_domain) + 2*length($username) + 2*length($machine)+ 48); 
-    $msg .= $flags . unicodify($user_domain) . unicodify($username) . unicodify($machine) . $lm_resp . $nt_resp . $session_key;
+    if ($_[2] & NTLMSSP_NEGOTIATE_UNICODE) {
+	$msg .= pack("v", length($lm_resp)) . pack("v", length($lm_resp)) . pack("V", $offset + 2*length($user_domain) + 2*length($username) + 2*length($machine) + length($session_key)); 
+	$msg .= pack("v", length($nt_resp)) . pack("v", length($nt_resp)) . pack("V", $offset + 2*length($user_domain) + 2*length($username) + 2*length($machine) + length($session_key) + length($lm_resp)); 
+	$msg .= pack("v", 2*length($user_domain)) . pack("v", 2*length($user_domain)) . pack("V", $offset); 
+	$msg .= pack("v", 2*length($username)) . pack("v", 2*length($username)) . pack("V", $offset + 2*length($user_domain)); 
+	$msg .= pack("v", 2*length($machine)) . pack("v", 2*length($machine)) . pack("V", $offset + 2*length($user_domain) + 2*length($username)); 
+	$msg .= pack("v", length($session_key)) . pack("v", length($session_key)) . pack("V", $offset + 2*length($user_domain) + 2*length($username) + 2*length($machine)+ 48); 
+	$msg .= $flags . unicodify($user_domain) . unicodify($username) . unicodify($machine) . $lm_resp . $nt_resp . $session_key;
+    }
+    else {
+	$msg .= pack("v", length($lm_resp)) . pack("v", length($lm_resp)) . pack("V", $offset + length($user_domain) + length($username) + length($machine) + length($session_key)); 
+	$msg .= pack("v", length($nt_resp)) . pack("v", length($nt_resp)) . pack("V", $offset + length($user_domain) + length($username) + length($machine) + length($session_key) + length($lm_resp)); 
+	$msg .= pack("v", length($user_domain)) . pack("v", length($user_domain)) . pack("V", $offset); 
+	$msg .= pack("v", length($username)) . pack("v", length($username)) . pack("V", $offset + length($user_domain)); 
+	$msg .= pack("v", length($machine)) . pack("v", length($machine)) . pack("V", $offset + length($user_domain) + length($username)); 
+	$msg .= pack("v", length($session_key)) . pack("v", length($session_key)) . pack("V", $offset + length($user_domain) + length($username) + length($machine)+ 48); 
+	$msg .= $flags . $user_domain . $username . $machine . $lm_resp . $nt_resp . $session_key;
+    }
     return $msg;
 }
 
@@ -378,14 +399,14 @@ sub parse_auth($$)
     $type == NTLMSSP_AUTH or usage "Not an NTLM Authetication Message!\n";
     my $lm_resp = GetString($pkt, 12);
     my $nt_resp = GetString($pkt, 20);
-    my $user_domain = GetString($pkt, 28);
-    $user_domain = un_unicodify($user_domain);
-    my $username = GetString($pkt, 36);
-    $username = un_unicodify($username);
-    my $machine = GetString($pkt, 44);
-    $machine = un_unicodify($machine);
-    my $session_key = GetString($pkt, 52);
     my $flags = GetInt32(substr($pkt, 60));
+    my $user_domain = GetString($pkt, 28);
+    $user_domain = un_unicodify($user_domain) if $flags & NTLMSSP_NEGOTIATE_UNICODE;
+    my $username = GetString($pkt, 36);
+    $username = un_unicodify($username) if $flags & NTLMSSP_NEGOTIATE_UNICODE;
+    my $machine = GetString($pkt, 44);
+    $machine = un_unicodify($machine) if $flags & NTLMSSP_NEGOTIATE_UNICODE;
+    my $session_key = GetString($pkt, 52);
     return ($flags, $lm_resp, $nt_resp, $user_domain, $username, $machine, $session_key);
 }
 

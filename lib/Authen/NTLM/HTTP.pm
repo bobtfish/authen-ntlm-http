@@ -20,7 +20,7 @@ require DynaLoader;
 @ISA = qw (Exporter DynaLoader Authen::NTLM);
 @EXPORT = qw ();
 @EXPORT_OK = qw ();
-$VERSION = '0.30';
+$VERSION = '0.31';
 
 # Stolen from Crypt::DES.
 sub usage {
@@ -28,6 +28,10 @@ sub usage {
     $Carp::CarpLevel = 2;
     croak "Usage: $subr (@_)";
 }
+
+# Flags to indicate whether we are talking to web server or proxy
+use constant NTLMSSP_HTTP_WWW => "WWW";
+use constant NTLMSSP_HTTP_PROXY => "Proxy";
 
 # These constants are stolen from samba-2.2.4 and other sources
 use constant NTLMSSP_SIGNATURE => 'NTLMSSP';
@@ -92,9 +96,10 @@ use constant NTLMSSP_NEGOTIATE_80000000                 => 0x80000000;
 # and the LM hash of the client password as arguments.                  #
 #########################################################################
 sub new_client {
-    usage("new_client Authen::NTLM::HTTP(\$lm_hpw, \$nt_hpw\) or\nnew_client Authen::NTLM::HTTP\(\$lm_hpw, \$nt_hpw, \$user, \$user_domain, \$domain, \$machine\)") unless @_ == 3 or @_ == 7;
-    my ($package, $lm_hpw, $nt_hpw, $user, $user_domain, $domain, $machine) = @_;
+    usage("new_client Authen::NTLM::HTTP(\$lm_hpw, \$nt_hpw\) or\nnew_client Authen::NTLM::HTTP\(\$lm_hpw, \$nt_hpw, \$type, \$user, \$user_domain, \$domain, \$machine\)") unless @_ == 3 or @_ == 4 or @_ == 8;
+    my ($package, $lm_hpw, $nt_hpw, $type, $user, $user_domain, $domain, $machine) = @_;
     srand time;
+    if (not defined($type)) {$type = NTLMSSP_HTTP_WWW;}
     if (not defined($user)) {$user = $ENV{'USERNAME'};}
     if (not defined($user_domain)) {$user_domain = $ENV{'USERDOMAIN'};}
     if (not defined($domain)) {$domain = Win32::DomainName();}
@@ -107,6 +112,7 @@ sub new_client {
     defined($machine) or usage "Undefined Computer Name!\n";
     my $ctx_id = pack("V", rand 2**32);
     bless {
+	'type' => $type,
 	'user' => $user,
 	'user_domain' => $user_domain,
 	'domain' => $domain,
@@ -122,11 +128,13 @@ sub new_client {
 # is not supplied, it will call Win32::DomainName to obtain it.           #
 ###########################################################################
 sub new_server {
-    usage("new_server Authen::NTLM::HTTP or\nnew_server Authen::NTLM::HTTP(\$domain\)") unless @_ == 1 or @_ == 2;
-    my ($package, $domain) = @_;
+    usage("new_server Authen::NTLM::HTTP or\nnew_server Authen::NTLM::HTTP(\$type, \$domain\)") unless @_ == 1 or @_ == 2 or @_ == 3;
+    my ($package, $type, $domain) = @_;
+    if (not defined($type)) {$type = NTLMSSP_HTTP_WWW;}
     if (not defined($domain)) {$domain = Win32::DomainName();}
     defined($domain) or usage "Undefined Network Domain!\n";
     bless {
+	'type' => $type,
         'domain' => $domain,
 	'cChallenge' => 0 # a counter to stir the seed to generate random
           }, $package;    # number for the nonce
@@ -178,7 +186,7 @@ sub http_challenge($$)
 	$str = encode_base64($self->SUPER::challenge_msg($flags));
     }
     $str =~ s/\s//g;
-    return "WWW-Authenticate: NTLM " . $str;
+    return $self->{'type'} . "-Authenticate: NTLM " . $str;
 }
 
 ###########################################################################
@@ -189,8 +197,9 @@ sub http_challenge($$)
 sub http_parse_challenge
 {
     my ($self, $pkt) = @_;
-    $pkt =~ s/WWW-Authenticate: NTLM //;
-    my $str = decode_base64($pkt);
+    my $str = $self->{'type'} . "-Authenticate: NTLM ";
+    $pkt =~ s/$str//;
+    $str = decode_base64($pkt);
     return $self->SUPER::parse_challenge($str);
 }
 
@@ -208,7 +217,12 @@ sub http_auth($$$)
     my $flags = shift;
     my $str = encode_base64($self->SUPER::auth_msg($nonce, $flags));
     $str =~ s/\s//g;;
-    return "Authorization: NTLM " . $str;
+    if ($self->{'type'} eq NTLMSSP_HTTP_PROXY) {
+	return "Proxy-Authorization: NTLM " . $str;
+    }
+    else {
+	return "Authorization: NTLM " . $str;
+    }
 }
 
 ###########################################################################
@@ -219,7 +233,12 @@ sub http_auth($$$)
 sub http_parse_auth($$)
 {
     my ($self, $pkt) = @_;
-    $pkt =~ s/Authorization: NTLM //;
+    if ($self->{'type'} eq NTLMSSP_HTTP_PROXY) {
+        $pkt =~ s/Proxy-Authorization: NTLM //;
+    }
+    else {
+	$pkt =~ s/Authorization: NTLM //;
+    }
     my $str = decode_base64($pkt);
     return $self->SUPER::parse_auth($str);
 }
@@ -270,6 +289,8 @@ use Authen::NTLM (nt_hash lm_hash);
 use Authen::NTLM::HTTP;
 
     $my_pass = "mypassword";
+# Note: To instantiate a client talking to a proxy, do 
+# $client = new_client Authen::NTLM::HTTP(lm_hash($my_pass), nt_hash($my_pass), Authen::NTLM::HTTP::NTLMSSP_HTTP_PROXY);
     $client = new_client Authen::NTLM::HTTP(lm_hash($my_pass), nt_hash($my_pass));
 
 # Stage 3 scenario: creates NTLM negotiate message and then
@@ -292,6 +313,8 @@ use Authen::NTLM::HTTP;
 
 # To instantiate a server to parse a NTLM negotiation
 # and compose a NTLM challenge
+# Note: To instantiate a proxy, do 
+# $server = new_server Authen::NTLM::HTTP(Authen::NTLM::HTTP::NTLMSSP_HTTP_PROXY);
     $server = new_server Authen::NTLM::HTTP;
 
     ($flags, $domain, $machine) = 

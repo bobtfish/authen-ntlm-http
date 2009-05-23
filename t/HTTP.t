@@ -7,7 +7,7 @@ use Test;
 plan tests => 17;
 $my_pass = "Beeblebrox";
 $nonce = "SrvNonce";
-$client = new_client Authen::NTLM::HTTP(lm_hash($my_pass), nt_hash($my_pass), "Zaphod", "URSA-MINOR", "URSA-MINOR", "LIGHTCITY");
+$client = new_client Authen::NTLM::HTTP(lm_hash($my_pass), nt_hash($my_pass), Authen::NTLM::HTTP::NTLMSSP_HTTP_WWW, "Zaphod", "URSA-MINOR", "URSA-MINOR", "LIGHTCITY");
 
 $correct_negotiate_msg = "Authorization: NTLM TlRMTVNTUAABAAAAA7IAAAoACgApAAAACQAJACAAAABMSUdIVENJVFlVUlNBLU1JTk9S";
 
@@ -23,7 +23,7 @@ $correct_auth_msg = "Authorization: NTLM TlRMTVNTUAADAAAAGAAYAHIAAAAYABgAigAAABQ
 	   | $client->NTLMSSP_NEGOTIATE_OEM;
 $negotiate_msg = $client->http_negotiate($flags);
 ok($correct_negotiate_msg eq $negotiate_msg);
-$server = new_server Authen::NTLM::HTTP("URSA-MINOR");
+$server = new_server Authen::NTLM::HTTP(Authen::NTLM::HTTP::NTLMSSP_HTTP_WWW, "URSA-MINOR");
 @ret = $server->http_parse_negotiate($negotiate_msg);
 ok($ret[0] == $flags);
 ok($ret[1] eq "URSA-MINOR");
