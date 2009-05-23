@@ -1,24 +1,17 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
+use inc::Module::Install; # FIXME - Need 0.87;
+use strict;
+use warnings;
 
-use ExtUtils::MakeMaker;
-eval "require Crypt::DES && require Digest::MD4";
-if ($@) {
-	WriteMakefile(
-	    'NAME'	    => 'Authen::NTLM',
-	    'VERSION_FROM'  => 'lib/Authen/NTLM.pm',
-	    'PREREQ_PM'     => {
-			       Crypt::DES_PP => 1.00,
-			       Digest::Perl::MD4 => 1.0, 
-			       }
-	);
-}
-else {
-    WriteMakefile(
-	'NAME'		=> 'Authen::NTLM',
-	'VERSION_FROM'	=> 'lib/Authen/NTLM.pm',
-	'PREREQ_PM'     => {
-			   Crypt::DES => 2.03,
-			   Digest::MD4 => 1.1, 
-			   }
-    );
-}
+name 'Authen-NTLM-HTTP';
+all_from 'lib/Authen/NTLM/HTTP.pm';
+
+requires 'Crypt::DES::PP' => '1.00';
+recommends 'Crypt::DES' => '2.03';
+
+requires 'Digest::Perl::MD4' => '1.0';
+recommends 'Digest::MD4' => '1.1';
+
+auto_install;
+WriteAll;
+
