@@ -12,6 +12,6 @@ recommends 'Crypt::DES' => '2.03';
 requires 'Digest::Perl::MD4' => '1.0';
 recommends 'Digest::MD4' => '1.1';
 
-auto_install;
+#auto_install;
 WriteAll;
 

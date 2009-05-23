@@ -4,12 +4,12 @@
 # I will add the corresponding server side functions in the next version.
 #
 
-package Authen::NTLM;
+package Authen::NTLM::HTTP::Base;
 
 use strict;
 use POSIX;
 use Carp;
-$Authen::NTLM::PurePerl = undef; # a flag to see if we load pure perl 
+$Authen::NTLM::HTTP::Base::PurePerl = undef; # a flag to see if we load pure perl 
                                        # DES and MD4 modules
 eval "require Crypt::DES && require Digest::MD4";
 if ($@) {
@@ -18,14 +18,14 @@ if ($@) {
 	die "Required DES and/or MD4 module doesn't exist!\n";
     }
     else {
-        $Authen::NTLM::PurePerl = 1;
+        $Authen::NTLM::HTTP::Base::PurePerl = 1;
     }
 }
 else {
-    $Authen::NTLM::PurePerl = 0;
+    $Authen::NTLM::HTTP::Base::PurePerl = 0;
 }
 
-if ($Authen::NTLM::PurePerl == 1) {
+if ($Authen::NTLM::HTTP::Base::PurePerl == 1) {
     require Crypt::DES_PP;
     Crypt::DES_PP->import;
     require Digest::Perl::MD4;
@@ -179,7 +179,7 @@ sub lm_hash($)
     my $lm_pw = substr($passwd, 0, 14);
     $lm_pw = uc($lm_pw); # change the password to upper case
     my $key = convert_key(substr($lm_pw, 0, 7)) . convert_key(substr($lm_pw, 7, 7));
-    if ($Authen::NTLM::PurePerl) {
+    if ($Authen::NTLM::HTTP::Base::PurePerl) {
 	$cipher1 = Crypt::DES_PP->new(substr($key, 0, 8));
 	$cipher2 = Crypt::DES_PP->new(substr($key, 8, 8));
     }
@@ -199,7 +199,7 @@ sub nt_hash($)
     my ($passwd) = @_;
     my $nt_pw = unicodify($passwd);
     my $nt_hpw;
-    if ($Authen::NTLM::PurePerl == 1) {
+    if ($Authen::NTLM::HTTP::Base::PurePerl == 1) {
 	$nt_hpw = md4($nt_pw) . pack("H10", "0000000000");
     }
     else {
@@ -503,7 +503,7 @@ sub calc_resp($$)
     my $cipher3; 
     usage("key must be 21-bytes long") unless length($key) == 21;
     usage("nonce must be 8-bytes long") unless length($nonce) == 8;
-    if ($Authen::NTLM::PurePerl) {
+    if ($Authen::NTLM::HTTP::Base::PurePerl) {
 	$cipher1 = Crypt::DES_PP->new(convert_key(substr($key, 0, 7)));
 	$cipher2 = Crypt::DES_PP->new(convert_key(substr($key, 7, 7)));
 	$cipher3 = Crypt::DES_PP->new(convert_key(substr($key, 14, 7)));

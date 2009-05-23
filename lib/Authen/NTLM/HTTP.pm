@@ -13,11 +13,10 @@ use MIME::Base64;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK);
 
 require Exporter;
-require DynaLoader;
 
 *import = \&Exporter::import;
 
-@ISA = qw (Exporter DynaLoader Authen::NTLM);
+use base qw/Authen::NTLM::HTTP::Base/;
 @EXPORT = qw ();
 @EXPORT_OK = qw ();
 $VERSION = '0.31';

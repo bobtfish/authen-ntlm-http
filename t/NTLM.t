@@ -1,12 +1,12 @@
 #!/usr/bin/perl
 
-use Authen::NTLM qw(nt_hash lm_hash);
+use Authen::NTLM::HTTP::Base qw(nt_hash lm_hash);
 use Test;
 
 plan tests => 17;
 $my_pass = "Beeblebrox";
 $nonce = "SrvNonce";
-$client = new_client Authen::NTLM(lm_hash($my_pass), nt_hash($my_pass), "USER", "USERDOM", "DOM", "WS");
+$client = new_client Authen::NTLM::HTTP::Base(lm_hash($my_pass), nt_hash($my_pass), "USER", "USERDOM", "DOM", "WS");
 
 $correct_negotiate_msg = pack("H74", "4e544c4d53535000" .
 				"0100000007b200a00300030022000000" .
@@ -32,7 +32,7 @@ $correct_auth_msg = pack("H180", "4e544c4d5353500003000000" .
 $negotiate_msg = $client->negotiate_msg($flags);
 ok($negotiate_msg eq $correct_negotiate_msg);
    
-$server = new_server Authen::NTLM("DOM");
+$server = new_server Authen::NTLM::HTTP::Base("DOM");
 @ret = $server->parse_negotiate($negotiate_msg);
 ok($ret[0] == $flags);
 ok($ret[1] eq "DOM");
