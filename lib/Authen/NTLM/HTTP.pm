@@ -20,7 +20,7 @@ require DynaLoader;
 @ISA = qw (Exporter DynaLoader Authen::NTLM);
 @EXPORT = qw ();
 @EXPORT_OK = qw ();
-$VERSION = '0.02';
+$VERSION = '0.30';
 
 # Stolen from Crypt::DES.
 sub usage {
