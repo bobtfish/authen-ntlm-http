@@ -1,0 +1,3 @@
+0.32
+   - Rename Authen::NTLM to Authen::NTLM::HTTP::Base to avoid namespace clash
+
