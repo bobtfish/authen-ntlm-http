@@ -354,35 +354,25 @@ Yee Man Chan. It was written due to popular requests.
 Yee Man Chan never tests it in any production environment
 but he is confident that it should work as expected.
 
-=head1 DEPENDENCIES
-
-To use this module, please install the following two modules:
-
-1) Authen::NTLM module by Yee Man Chan (UMVUE)
-
-2) MIME::Base64 module by Gisle Aas (GAAS).
-
-
 =head1 TO-DO
 
 Supposedly this implementation is complete. Improvements will be done
 on the underlying Authen::NTLM module. However, if you figure out
 something I missed, feel free to let me know.
 
-=head1 BUGS
+=head1 SEE ALSO
 
-Nothing known. 
+Authen::NTLM(3), MIME::Base64(3), perl(1), m4(1).
 
 =head1 AUTHOR
 
 This implementation was written by Yee Man Chan (ymc@yahoo.com).
-Copyright (c) 2002 Yee Man Chan. All rights reserved. This program 
-is free software; you can redistribute it and/or modify it under 
-the same terms as Perl itself. 
+Copyright (c) 2002 Yee Man Chan. Some rights reserved.
 
-=head1 SEE ALSO
+=head1 LICENSE
 
-Authen::NTLM(3), MIME::Base64(3), perl(1), m4(1).
+This program is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =cut
 
@@ -395,4 +385,4 @@ perl-brace-offset: -4
 perl-brace-imaginary-offset: 0
 perl-label-offset: -4
 tab-width: 4
-End:                                                                            
+End:
