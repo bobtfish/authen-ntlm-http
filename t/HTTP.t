@@ -1,7 +1,7 @@
 #!/usr/bin/perl
 
-use Authen::NTLM qw(lm_hash nt_hash);
-use Authen::NTLM::HTTP; 
+use Authen::NTLM::HTTP::Base qw(lm_hash nt_hash);
+use Authen::NTLM::HTTP;
 use Test;
 
 plan tests => 17;
