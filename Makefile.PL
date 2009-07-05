@@ -6,6 +6,8 @@ use warnings;
 name 'Authen-NTLM-HTTP';
 all_from 'lib/Authen/NTLM/HTTP.pm';
 
+requires 'MIME::Base64';
+
 requires 'Crypt::DES::PP' => '1.00';
 recommends 'Crypt::DES' => '2.03';
 
