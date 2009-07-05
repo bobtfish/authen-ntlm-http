@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-use inc::Module::Install; # FIXME - Need 0.87;
+use inc::Module::Install 0.91;
 use strict;
 use warnings;
 
@@ -12,6 +12,7 @@ recommends 'Crypt::DES' => '2.03';
 requires 'Digest::Perl::MD4' => '1.0';
 recommends 'Digest::MD4' => '1.1';
 
-#auto_install;
+license 'perl';
+
 WriteAll;
 
