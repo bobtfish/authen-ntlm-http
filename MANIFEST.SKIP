@@ -1,3 +1,5 @@
+^Authen-NTLM-HTTP-
+
 # Avoid version control files.
 \.gitignore\b
 \.git\b
