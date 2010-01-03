@@ -9,7 +9,7 @@ package Authen::NTLM::HTTP::Base;
 use strict;
 use POSIX;
 use Carp;
-$Authen::NTLM::HTTP::Base::PurePerl = undef; # a flag to see if we load pure perl 
+$Authen::NTLM::HTTP::Base::PurePerl = undef; # a flag to see if we load pure perl
                                        # DES and MD4 modules
 eval "require Crypt::DES && require Digest::MD4";
 if ($@) {
@@ -63,18 +63,18 @@ use constant NTLMSSP_SIGNATURE => 'NTLMSSP';
 use constant NTLMSSP_NEGOTIATE => 1;
 use constant NTLMSSP_CHALLENGE => 2;
 use constant NTLMSSP_AUTH      => 3;
-use constant NTLMSSP_UNKNOWN   => 4; 
+use constant NTLMSSP_UNKNOWN   => 4;
 
 # NTLMSSP Flags
 
 # Text strings are in unicode
 use constant NTLMSSP_NEGOTIATE_UNICODE                  => 0x00000001;
-# Text strings are in OEM 
+# Text strings are in OEM
 use constant NTLMSSP_NEGOTIATE_OEM                      => 0x00000002;
-# Server should return its authentication realm 
+# Server should return its authentication realm
 use constant NTLMSSP_REQUEST_TARGET                     => 0x00000004;
-# Request signature capability 
-use constant NTLMSSP_NEGOTIATE_SIGN                     => 0x00000010; 
+# Request signature capability
+use constant NTLMSSP_NEGOTIATE_SIGN                     => 0x00000010;
 # Request confidentiality
 use constant NTLMSSP_NEGOTIATE_SEAL                     => 0x00000020;
 # Use datagram style authentication
@@ -188,7 +188,7 @@ sub lm_hash($)
 	$cipher2 = Crypt::DES->new(substr($key, 8, 8));
     }
     return $cipher1->encrypt($magic) . $cipher2->encrypt($magic) . pack("H10", "0000000000");
-} 
+}
 
 ##########################################################################
 # nt_hash calculates the NT hash to be used to calculate the NT response #
@@ -226,7 +226,7 @@ sub negotiate_msg($$)
     $msg .= pack("V", NTLMSSP_NEGOTIATE);
     $msg .= $flags;
     my $offset = length($msg) + 8*2;
-    $msg .= pack("v", length($domain)) . pack("v", length($domain)) . pack("V", $offset + length($machine)); 
+    $msg .= pack("v", length($domain)) . pack("v", length($domain)) . pack("V", $offset + length($machine));
     $msg .= pack("v", length($machine)) . pack("v", length($machine)) . pack("V", $offset);
     $msg .= $machine . $domain;
     return $msg;
@@ -235,7 +235,7 @@ sub negotiate_msg($$)
 ###########################################################################
 # parse_negotiate parses the NTLM negotiate and return a list of NTLM     #
 # Negotiation Flags, Server Network Domain and Machine name of the client.#
-########################################################################### 
+###########################################################################
 sub parse_negotiate($$)
 {
     my ($self, $pkt) = @_;
@@ -250,7 +250,7 @@ sub parse_negotiate($$)
 
 ####################################################################
 # challenge_msg composes the NTLM challenge message. It takes NTLM #
-# Negotiation Flags as an argument.                                # 
+# Negotiation Flags as an argument.                                #
 ####################################################################
 sub challenge_msg($$)
 {
@@ -294,7 +294,7 @@ sub challenge_msg($$)
 # parse_challenge parses the NTLM challenge and return a list of server   #
 # network domain, NTLM Negotiation Flags, Nonce, ServerContextHandleUpper #
 # and ServerContextHandleLower.                                           #
-########################################################################### 
+###########################################################################
 sub parse_challenge
 {
     my ($self, $pkt) = @_;
@@ -303,7 +303,7 @@ sub parse_challenge
     $type == NTLMSSP_CHALLENGE or usage "Not an NTLM Challenge Message!\n";
     my $flags = GetInt32(substr($pkt, 20));
     my $target = undef;
-    my $ctx_lower = undef; 
+    my $ctx_lower = undef;
     my $ctx_upper = undef;
     if ($flags & NTLMSSP_TARGET_TYPE_DOMAIN) {
 	$target = GetString($pkt, 12);
@@ -349,7 +349,7 @@ sub GetInt16
 # auth_msg creates the NTLM response to an NTLM challenge from the        #
 # server. It takes 2 arguments: $nonce obtained from parse_challenge and  #
 # NTLM Negotiation Flags.                                                 #
-# This function ASSUMEs the input of user domain, user name and           # 
+# This function ASSUMEs the input of user domain, user name and           #
 # workstation name are in ASCII format and not in UNICODE format.         #
 ###########################################################################
 sub auth_msg($$$)
@@ -366,21 +366,21 @@ sub auth_msg($$$)
     $msg .= pack("V", NTLMSSP_AUTH);
     my $offset = length($msg) + 8*6 + 4;
     if ($_[2] & NTLMSSP_NEGOTIATE_UNICODE) {
-	$msg .= pack("v", length($lm_resp)) . pack("v", length($lm_resp)) . pack("V", $offset + 2*length($user_domain) + 2*length($username) + 2*length($machine) + length($session_key)); 
-	$msg .= pack("v", length($nt_resp)) . pack("v", length($nt_resp)) . pack("V", $offset + 2*length($user_domain) + 2*length($username) + 2*length($machine) + length($session_key) + length($lm_resp)); 
-	$msg .= pack("v", 2*length($user_domain)) . pack("v", 2*length($user_domain)) . pack("V", $offset); 
-	$msg .= pack("v", 2*length($username)) . pack("v", 2*length($username)) . pack("V", $offset + 2*length($user_domain)); 
-	$msg .= pack("v", 2*length($machine)) . pack("v", 2*length($machine)) . pack("V", $offset + 2*length($user_domain) + 2*length($username)); 
-	$msg .= pack("v", length($session_key)) . pack("v", length($session_key)) . pack("V", $offset + 2*length($user_domain) + 2*length($username) + 2*length($machine)+ 48); 
+	$msg .= pack("v", length($lm_resp)) . pack("v", length($lm_resp)) . pack("V", $offset + 2*length($user_domain) + 2*length($username) + 2*length($machine) + length($session_key));
+	$msg .= pack("v", length($nt_resp)) . pack("v", length($nt_resp)) . pack("V", $offset + 2*length($user_domain) + 2*length($username) + 2*length($machine) + length($session_key) + length($lm_resp));
+	$msg .= pack("v", 2*length($user_domain)) . pack("v", 2*length($user_domain)) . pack("V", $offset);
+	$msg .= pack("v", 2*length($username)) . pack("v", 2*length($username)) . pack("V", $offset + 2*length($user_domain));
+	$msg .= pack("v", 2*length($machine)) . pack("v", 2*length($machine)) . pack("V", $offset + 2*length($user_domain) + 2*length($username));
+	$msg .= pack("v", length($session_key)) . pack("v", length($session_key)) . pack("V", $offset + 2*length($user_domain) + 2*length($username) + 2*length($machine)+ 48);
 	$msg .= $flags . unicodify($user_domain) . unicodify($username) . unicodify($machine) . $lm_resp . $nt_resp . $session_key;
     }
     else {
-	$msg .= pack("v", length($lm_resp)) . pack("v", length($lm_resp)) . pack("V", $offset + length($user_domain) + length($username) + length($machine) + length($session_key)); 
-	$msg .= pack("v", length($nt_resp)) . pack("v", length($nt_resp)) . pack("V", $offset + length($user_domain) + length($username) + length($machine) + length($session_key) + length($lm_resp)); 
-	$msg .= pack("v", length($user_domain)) . pack("v", length($user_domain)) . pack("V", $offset); 
-	$msg .= pack("v", length($username)) . pack("v", length($username)) . pack("V", $offset + length($user_domain)); 
-	$msg .= pack("v", length($machine)) . pack("v", length($machine)) . pack("V", $offset + length($user_domain) + length($username)); 
-	$msg .= pack("v", length($session_key)) . pack("v", length($session_key)) . pack("V", $offset + length($user_domain) + length($username) + length($machine)+ 48); 
+	$msg .= pack("v", length($lm_resp)) . pack("v", length($lm_resp)) . pack("V", $offset + length($user_domain) + length($username) + length($machine) + length($session_key));
+	$msg .= pack("v", length($nt_resp)) . pack("v", length($nt_resp)) . pack("V", $offset + length($user_domain) + length($username) + length($machine) + length($session_key) + length($lm_resp));
+	$msg .= pack("v", length($user_domain)) . pack("v", length($user_domain)) . pack("V", $offset);
+	$msg .= pack("v", length($username)) . pack("v", length($username)) . pack("V", $offset + length($user_domain));
+	$msg .= pack("v", length($machine)) . pack("v", length($machine)) . pack("V", $offset + length($user_domain) + length($username));
+	$msg .= pack("v", length($session_key)) . pack("v", length($session_key)) . pack("V", $offset + length($user_domain) + length($username) + length($machine)+ 48);
 	$msg .= $flags . $user_domain . $username . $machine . $lm_resp . $nt_resp . $session_key;
     }
     return $msg;
@@ -390,7 +390,7 @@ sub auth_msg($$$)
 # parse_auth parses the NTLM authentication and return a list of NTLM     #
 # Negotiation Flags, LM response, NT response, User Domain, User Name,    #
 # User Machine Name and Session Key.                                      #
-########################################################################### 
+###########################################################################
 sub parse_auth($$)
 {
     my ($self, $pkt) = @_;
@@ -432,20 +432,20 @@ sub compute_nonce($)
               (($SysTime[3] - 1) << 16) |
               (($SysTime[4] + 0) << 24);
    srand $Seed;
-   my $ulChallenge0 = rand(2**16)+rand(2**32); 
-   my $ulChallenge1 = rand(2**16)+rand(2**32); 
+   my $ulChallenge0 = rand(2**16)+rand(2**32);
+   my $ulChallenge1 = rand(2**16)+rand(2**32);
    my $ulNegate = rand(2**16)+rand(2**32);
-   if ($ulNegate & 0x1) {$ulChallenge0 |= 0x80000000;} 
-   if ($ulNegate & 0x2) {$ulChallenge1 |= 0x80000000;} 
+   if ($ulNegate & 0x1) {$ulChallenge0 |= 0x80000000;}
+   if ($ulNegate & 0x2) {$ulChallenge1 |= 0x80000000;}
    return pack("V", $ulChallenge0) . pack("V", $ulChallenge1);
 }
 
 #########################################################################
-# convert_key converts a 7-bytes key to an 8-bytes key based on an 
+# convert_key converts a 7-bytes key to an 8-bytes key based on an
 # algorithm.
 #########################################################################
 sub convert_key($) {
-    my ($in_key) = @_; 
+    my ($in_key) = @_;
     my @byte;
     my $result = "";
     usage("exactly 7-bytes key") unless length($in_key) == 7;
@@ -465,7 +465,7 @@ sub convert_key($) {
 }
 
 ##########################################################################
-# set_odd_parity turns one-byte into odd parity. Odd parity means that 
+# set_odd_parity turns one-byte into odd parity. Odd parity means that
 # a number in binary has odd number of 1's.
 ##########################################################################
 sub set_odd_parity($)
@@ -500,7 +500,7 @@ sub calc_resp($$)
     my ($key, $nonce) = @_;
     my $cipher1;
     my $cipher2;
-    my $cipher3; 
+    my $cipher3;
     usage("key must be 21-bytes long") unless length($key) == 21;
     usage("nonce must be 8-bytes long") unless length($nonce) == 8;
     if ($Authen::NTLM::HTTP::Base::PurePerl) {
@@ -552,18 +552,18 @@ sub unicodify($)
 
 ##########################################################################
 # UNIXTimeToFILETIME converts UNIX time_t to 64-bit FILETIME format used
-# in win32 platforms. It returns two 32-bit integer. The first one is 
+# in win32 platforms. It returns two 32-bit integer. The first one is
 # the upper 32-bit and the second one is the lower 32-bit. The result is
 # adjusted by cChallenge as in NTLM spec. For those of you who want to
 # use this function for actual use, please remove the cChallenge variable.
-########################################################################## 
+##########################################################################
 sub UNIXTimeToFILETIME($$)
 {
     my ($cChallenge, $time) = @_;
     $time = $time * 10000000 + 11644473600000000 + $cChallenge;
     my $uppertime = $time / (2**32);
     my $lowertime = $time - floor($uppertime) * 2**32;
-    return ($lowertime & 0x000000ff, 
+    return ($lowertime & 0x000000ff,
 	    $lowertime & 0x0000ff00,
 	    $lowertime & 0x00ff0000,
 	    $lowertime & 0xff000000,
@@ -579,50 +579,50 @@ __END__
 
 =head1 NAME
 
-Authen::NTLM - Perl extension for NTLM related computations
+Authen::NTLM::HTTP::Base - Perl extension for NTLM related computations
 
 =head1 SYNOPSIS
 
-use Authen::NTLM qw(nt_hash lm_hash);
+use Authen::NTLM::HTTP::Base qw(nt_hash lm_hash);
 
     $my_pass = "mypassword";
-    $client = new_client Authen::NTLM(lm_hash($my_pass), nt_hash($my_pass));
+    $client = new_client Authen::NTLM::HTTP::Base(lm_hash($my_pass), nt_hash($my_pass));
 
 # To compose a NTLM Negotiate Packet
-    $flags = Authen::NTLM::NTLMSSP_NEGOTIATE_80000000 
-	   | Authen::NTLM::NTLMSSP_NEGOTIATE_128
-	   | Authen::NTLM::NTLMSSP_NEGOTIATE_ALWAYS_SIGN
-	   | Authen::NTLM::NTLMSSP_NEGOTIATE_OEM_DOMAIN_SUPPLIED
-	   | Authen::NTLM::NTLMSSP_NEGOTIATE_OEM_WORKSTATION_SUPPLIED
-	   | Authen::NTLM::NTLMSSP_NEGOTIATE_NTLM
-	   | Authen::NTLM::NTLMSSP_NEGOTIATE_UNICODE
-	   | Authen::NTLM::NTLMSSP_NEGOTIATE_OEM
-	   | Authen::NTLM::NTLMSSP_REQUEST_TARGET;
+    $flags = Authen::NTLM::HTTP::Base::NTLMSSP_NEGOTIATE_80000000
+	   | Authen::NTLM::HTTP::Base::NTLMSSP_NEGOTIATE_128
+	   | Authen::NTLM::HTTP::Base::NTLMSSP_NEGOTIATE_ALWAYS_SIGN
+	   | Authen::NTLM::HTTP::Base::NTLMSSP_NEGOTIATE_OEM_DOMAIN_SUPPLIED
+	   | Authen::NTLM::HTTP::Base::NTLMSSP_NEGOTIATE_OEM_WORKSTATION_SUPPLIED
+	   | Authen::NTLM::HTTP::Base::NTLMSSP_NEGOTIATE_NTLM
+	   | Authen::NTLM::HTTP::Base::NTLMSSP_NEGOTIATE_UNICODE
+	   | Authen::NTLM::HTTP::Base::NTLMSSP_NEGOTIATE_OEM
+	   | Authen::NTLM::HTTP::Base::NTLMSSP_REQUEST_TARGET;
     $negotiate_msg = $client->negotiate_msg($flags);
 
 # To instantiate a server to parse a NTLM negotiation
 # and compose a NTLM challenge
-    $server = new_server Authen::NTLM;
+    $server = new_server Authen::NTLM::HTTP::Base;
 
-    ($flags, $domain, $machine) = 
+    ($flags, $domain, $machine) =
 	$server->parse_negotiate($negotiate_msg);
 
-    $flags = Authen::NTLM::NTLMSSP_NEGOTIATE_ALWAYS_SIGN
-	   | Authen::NTLM::NTLMSSP_NEGOTIATE_NTLM
-	   | Authen::NTLM::NTLMSSP_REQUEST_INIT_RESPONSE
-	   | Authen::NTLM::NTLMSSP_NEGOTIATE_UNICODE
-	   | Authen::NTLM::NTLMSSP_REQUEST_TARGET;
+    $flags = Authen::NTLM::HTTP::Base::NTLMSSP_NEGOTIATE_ALWAYS_SIGN
+	   | Authen::NTLM::HTTP::Base::NTLMSSP_NEGOTIATE_NTLM
+	   | Authen::NTLM::HTTP::Base::NTLMSSP_REQUEST_INIT_RESPONSE
+	   | Authen::NTLM::HTTP::Base::NTLMSSP_NEGOTIATE_UNICODE
+	   | Authen::NTLM::HTTP::Base::NTLMSSP_REQUEST_TARGET;
     $challenge_msg = $server->challenge_msg($flags);
 
 # client parse NTLM challenge
-    ($domain, $flags, $nonce, $ctx_upper, $ctx_lower) = 
+    ($domain, $flags, $nonce, $ctx_upper, $ctx_lower) =
 	$client->parse_challenge($challenge_msg);
 
 # To compose a NTLM Response Packet
-    $flags = Authen::NTLM::NTLMSSP_NEGOTIATE_ALWAYS_SIGN
-	   | Authen::NTLM::NTLMSSP_NEGOTIATE_NTLM
-	   | Authen::NTLM::NTLMSSP_NEGOTIATE_UNICODE
-	   | Authen::NTLM::NTLMSSP_REQUEST_TARGET;
+    $flags = Authen::NTLM::HTTP::Base::NTLMSSP_NEGOTIATE_ALWAYS_SIGN
+	   | Authen::NTLM::HTTP::Base::NTLMSSP_NEGOTIATE_NTLM
+	   | Authen::NTLM::HTTP::Base::NTLMSSP_NEGOTIATE_UNICODE
+	   | Authen::NTLM::HTTP::Base::NTLMSSP_REQUEST_TARGET;
     $auth_msg = $client->auth_msg($nonce, $flags);
 
 # To parse a NTLM Response Packet
@@ -632,9 +632,9 @@ use Authen::NTLM qw(nt_hash lm_hash);
 =head1 DESCRIPTION
 
 The NTLM (Windows NT LAN Manager) authentication scheme is the authentication
-algorithm used by Microsoft. 
+algorithm used by Microsoft.
 
-NTLM authentication scheme is used in DCOM and HTTP environment. 
+NTLM authentication scheme is used in DCOM and HTTP environment.
 It is used to authenticate DCE RPC packets in DCOM. It is also used to
 authenticate HTTP packets to MS Web Proxy or MS Web Server.
 
@@ -654,7 +654,7 @@ DCOM client.
 To use this module, please install the one of the following two sets of
 DES and MD4 modules:
 
-1) Crypt::DES module by Dave Paris (DPARIS) and Digest::MD4 module by 
+1) Crypt::DES module by Dave Paris (DPARIS) and Digest::MD4 module by
 Mike McCauley (MIKEM) first. These two modules are implemented in C.
 
 2) Crypt::DES_PP module by Guido Flohr (GUIDO) and Digest::Perl::MD4
@@ -672,14 +672,14 @@ supposedly faster.
 
 =head1 BUGS
 
-Nothing known. 
+Nothing known.
 
 =head1 AUTHOR
 
 This implementation was written by Yee Man Chan (ymc@yahoo.com).
-Copyright (c) 2002 Yee Man Chan. All rights reserved. This program 
-is free software; you can redistribute it and/or modify it under 
-the same terms as Perl itself. 
+Copyright (c) 2002 Yee Man Chan. All rights reserved. This program
+is free software; you can redistribute it and/or modify it under
+the same terms as Perl itself.
 
 =head1 SEE ALSO
 
@@ -696,4 +696,4 @@ perl-brace-offset: -4
 perl-brace-imaginary-offset: 0
 perl-label-offset: -4
 tab-width: 4
-End:                                                                            
+End:
