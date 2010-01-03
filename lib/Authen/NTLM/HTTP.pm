@@ -19,7 +19,7 @@ require Exporter;
 use base qw/Authen::NTLM::HTTP::Base/;
 @EXPORT = qw ();
 @EXPORT_OK = qw ();
-$VERSION = '0.32';
+$VERSION = '0.33';
 
 # Stolen from Crypt::DES.
 sub usage {
